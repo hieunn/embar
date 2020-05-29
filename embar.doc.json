@@ -1,0 +1,1030 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "description" : "The API provides flexible integration interface for Payment Service Provider's to Bambora's Acceptance.",
+    "version" : "1.0.0",
+    "title" : "Bambora Acquiring API",
+    "contact" : {
+      "name" : "Bambora Acquiring Partner Support",
+      "url" : "http://www.bambora.com",
+      "email" : "acquiringpartnersupport@bambora.com"
+    },
+    "license" : {
+      "name" : "proprietary"
+    }
+  },
+  "host" : "api.bambora.com",
+  "basePath" : "/",
+  "tags" : [ {
+    "name" : "acq-api-tx-resource",
+    "description" : "Acq Api Tx Resource"
+  } ],
+  "produces" : [ "application/json" ],
+  "paths" : {
+    "/v1/acquiring/merchants/{merchantId}/transactions/{transactionId}/operations/{operationId}" : {
+      "get" : {
+        "tags" : [ "acq-api-tx-resource" ],
+        "summary" : "Query transaction status",
+        "operationId" : "getStatusUsingGET",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "merchantId",
+          "in" : "path",
+          "description" : "Bambora merchant ID N(2-8)",
+          "required" : true,
+          "type" : "string",
+          "pattern" : "[0-9]{2,8}"
+        }, {
+          "name" : "operationId",
+          "in" : "path",
+          "description" : "Unique id of an operation in the transaction flow.",
+          "required" : true,
+          "type" : "string",
+          "maxLength" : 40,
+          "minLength" : 1
+        }, {
+          "name" : "transactionId",
+          "in" : "path",
+          "description" : "Unique id of the transaction flow.",
+          "required" : true,
+          "type" : "string",
+          "maxLength" : 40,
+          "minLength" : 1
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Request accepted",
+            "schema" : {
+              "$ref" : "#/definitions/AcqApiTxStatusResponse"
+            }
+          },
+          "400" : {
+            "description" : "Bad request",
+            "schema" : {
+              "$ref" : "#/definitions/AcqApiErrorResponse"
+            }
+          },
+          "404" : {
+            "description" : "Transaction not found",
+            "schema" : {
+              "$ref" : "#/definitions/AcqApiErrorResponse"
+            }
+          },
+          "500" : {
+            "description" : "Internal server error",
+            "schema" : {
+              "$ref" : "#/definitions/AcqApiErrorResponse"
+            }
+          }
+        },
+        "deprecated" : false
+      }
+    },
+    "/v1/acquiring/transaction" : {
+      "post" : {
+        "tags" : [ "acq-api-tx-resource" ],
+        "summary" : "Submit transaction",
+        "operationId" : "handleTransactionUsingPOST",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "txReq",
+          "description" : "txReq",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/AcqApiTxRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Request accepted",
+            "schema" : {
+              "$ref" : "#/definitions/AcqApiTxResponse"
+            }
+          },
+          "400" : {
+            "description" : "Bad request",
+            "schema" : {
+              "$ref" : "#/definitions/AcqApiErrorResponse"
+            }
+          },
+          "500" : {
+            "description" : "Internal server error",
+            "schema" : {
+              "$ref" : "#/definitions/AcqApiErrorResponse"
+            }
+          }
+        },
+        "deprecated" : false
+      }
+    }
+  },
+  "definitions" : {
+    "AcqApiErrorResponse" : {
+      "type" : "object",
+      "required" : [ "detail", "status", "title", "type" ],
+      "properties" : {
+        "detail" : {
+          "type" : "string",
+          "description" : "Any relevant details about the error. May include suggestions for handling it. Can be an empty string if no extra details are available."
+        },
+        "status" : {
+          "type" : "integer",
+          "format" : "int32",
+          "description" : "The HTTP status code of this error response. Included to aid those frameworks that have a hard time working with anything other than the body of an HTTP response."
+        },
+        "title" : {
+          "type" : "string",
+          "description" : "The human-readable version of the error."
+        },
+        "type" : {
+          "type" : "string",
+          "description" : "The type of the error. This is what you should match against when implementing error handling. It is in the form of a URL that identifies the error type."
+        }
+      },
+      "title" : "AcqApiErrorResponse"
+    },
+    "AcqApiTxRequest" : {
+      "type" : "object",
+      "required" : [ "merchant" ],
+      "properties" : {
+        "accountType" : {
+          "type" : "string",
+          "description" : "Cardholder account type, defaults to DEFAULT",
+          "enum" : [ "DEFAULT", "SAVINGS", "CHEQUE", "CREDIT", "UNIVERSAL" ]
+        },
+        "allowPartialApproval" : {
+          "type" : "boolean",
+          "description" : "If true, issuer might approve part of the requested amount instead of declining the transaction. You must inspect amount in response if true."
+        },
+        "amount" : {
+          "$ref" : "#/definitions/AmountData"
+        },
+        "cardOnFileType" : {
+          "type" : "string",
+          "description" : "Type of card on file transaction",
+          "enum" : [ "INITIAL_RECURRING", "INITIAL_UCOF", "RECURRING", "UCOF_MIT", "UCOF_CIT" ]
+        },
+        "cardholderRef" : {
+          "type" : "string",
+          "description" : "Transaction reference that should be included in cardholder's statement, requires merchant specific configuration. Max amount of characters that is actually included depends on length of merchant name.",
+          "pattern" : "[\\x20-\\x7F]{1,25}"
+        },
+        "clearingCutOff" : {
+          "type" : "string",
+          "format" : "date-time",
+          "description" : "Timestamp when capture or refund can be taken into clearing"
+        },
+        "clientSideEncCardData" : {
+          "$ref" : "#/definitions/ClientSideEncCardData"
+        },
+        "dccData" : {
+          "$ref" : "#/definitions/DccData"
+        },
+        "ecomReqData" : {
+          "$ref" : "#/definitions/EcomReqData"
+        },
+        "includeClearingRespData" : {
+          "type" : "boolean",
+          "description" : "If true, extended response data for file based clearing will be returned in authorization response"
+        },
+        "initialSchemeTransactionId" : {
+          "type" : "string",
+          "description" : "The Trace-id/TID to be presented to the scheme to link any subsequent Recurring, or Merchant Initiated Transaction (MIT), with its initial transaction.",
+          "minLength" : 1,
+          "maxLength" : 40
+        },
+        "initialTransactionId" : {
+          "type" : "string",
+          "description" : "ID of the initial transaction when sending subsequent related transaction",
+          "minLength" : 1,
+          "maxLength" : 40
+        },
+        "merchant" : {
+          "$ref" : "#/definitions/MerchantData"
+        },
+        "merchantRef" : {
+          "type" : "string",
+          "description" : "Merchant's reference for transaction, must be AN(1-99) if provided",
+          "minLength" : 0,
+          "maxLength" : 99
+        },
+        "operationId" : {
+          "type" : "string",
+          "description" : "Unique id of specific operation in the transaction flow, e.g. AUTH or CAPTURE",
+          "minLength" : 1,
+          "maxLength" : 40
+        },
+        "originalOperationId" : {
+          "type" : "string",
+          "description" : "ID of the operation referred to. For example, CAPTURE would refer to operationId of AUTH.",
+          "minLength" : 1,
+          "maxLength" : 40
+        },
+        "paymentRef" : {
+          "type" : "string",
+          "description" : "Merchant's reference for settlement, subject to agreement with Bambora",
+          "pattern" : "[0-9]{1,12}|[0-9]{20}|RF[0-9]{1,23}"
+        },
+        "paymentType" : {
+          "type" : "string",
+          "description" : "Type of payment",
+          "enum" : [ "GAMING_REPAY", "TAX_REBATE", "FUNDS_DISBURSEMENT" ]
+        },
+        "plainCardData" : {
+          "$ref" : "#/definitions/PlainCardData"
+        },
+        "pspRef" : {
+          "type" : "string",
+          "description" : "PSP's reference for transaction, must be AN(1-32) if provided",
+          "minLength" : 0,
+          "maxLength" : 32
+        },
+        "recipientData" : {
+          "$ref" : "#/definitions/RecipientData"
+        },
+        "recurringType" : {
+          "type" : "string",
+          "description" : "Deprecated: Use cardOnFileType instead",
+          "enum" : [ "NON_RECURRING", "INITIAL_TX", "RECURRING_TX" ]
+        },
+        "retrievalRefNumber" : {
+          "type" : "string",
+          "description" : "Retrieval reference number for transaction, must be AN(12) if provided",
+          "pattern" : "[A-Za-z0-9]{12}"
+        },
+        "reversalReqData" : {
+          "$ref" : "#/definitions/ReversalReqData"
+        },
+        "scaExemptionReason" : {
+          "type" : "string",
+          "description" : "Strong customer authentication exemption reason",
+          "enum" : [ "LOW_VALUE_PAYMENT", "SCA_DELEGATION", "SECURE_CORPORATE_PAYMENT", "TRANSACTION_RISK_ANALYSIS", "TRUSTED_MERCHANT" ]
+        },
+        "splitCapture" : {
+          "$ref" : "#/definitions/SplitCapture"
+        },
+        "terminalReqData" : {
+          "$ref" : "#/definitions/TerminalReqData"
+        },
+        "transactionId" : {
+          "type" : "string",
+          "description" : "Unique id of the transaction flow. For example AUTH, CAPTURE and REFUND would have same transactionId.",
+          "minLength" : 1,
+          "maxLength" : 40
+        },
+        "transactionReason" : {
+          "type" : "string",
+          "description" : "Reason for special authorization types, only relevant for specific industries",
+          "enum" : [ "DEFAULT", "RESUBMISSION", "DELAYED_CHARGES", "REAUTHORIZATION", "NO_SHOW", "DEBT_REPAYMENT", "CRYPTO_CURRENCY", "SINGLE_TAP_RESUBMISSION" ]
+        },
+        "transactionTimestamp" : {
+          "type" : "string",
+          "format" : "date-time",
+          "description" : "Timestamp of transaction in merchant time zone in format yyyy-MM-ddTHH:mm:ss"
+        },
+        "transactionType" : {
+          "type" : "string",
+          "description" : "Type of transaction, defaults to PURCHASE",
+          "enum" : [ "PURCHASE", "CASH_ADVANCE", "REFUND", "PAYMENT" ]
+        },
+        "type" : {
+          "type" : "string",
+          "description" : "Type of the request. Value CAPTURE_REFUND is deprecated, use instead type = 'AUTH' and transactionType = 'REFUND'",
+          "enum" : [ "AUTH", "PREAUTH", "INCREMENTAL_AUTH", "AUTH_REVERSAL", "AUTH_REVERSAL_PARTIAL", "CAPTURE", "CAPTURE_REVERSAL", "CAPTURE_REFUND", "ADJUSTMENT", "AUTH_AND_CAPTURE", "AUTH_AND_CAPTURE_REVERSAL" ]
+        },
+        "walletId" : {
+          "type" : "string",
+          "description" : "Type of wallet, values are assigned by card schemes, e.g. 101 for MasterPass in eCommerce, 102 for MasterPass NFC, 103 for Apple Pay, 216 for Android Pay and 217 for Samsung Pay",
+          "pattern" : "[A-Za-z0-9]{1,3}"
+        }
+      },
+      "title" : "AcqApiTxRequest",
+      "description" : "Card transaction request"
+    },
+    "AcqApiTxResponse" : {
+      "type" : "object",
+      "required" : [ "merchant" ],
+      "properties" : {
+        "amount" : {
+          "$ref" : "#/definitions/AmountData"
+        },
+        "approvalCode" : {
+          "type" : "string",
+          "description" : "Authorization approval code if received from issuer."
+        },
+        "clearingRespData" : {
+          "$ref" : "#/definitions/ClearingRespData"
+        },
+        "ecomRespData" : {
+          "$ref" : "#/definitions/EcomRespData"
+        },
+        "initialSchemeTransactionId" : {
+          "type" : "string",
+          "description" : "The Trace-id/TID presented to the scheme for a subsequent Recurring or Merchant Initiated Transaction (MIT), or the Trace-id/TID of an initial Recurring or initial ucof authorization."
+        },
+        "merchant" : {
+          "$ref" : "#/definitions/MerchantData"
+        },
+        "operationId" : {
+          "type" : "string",
+          "description" : "operationId echoed from request"
+        },
+        "paymentAccountReference" : {
+          "type" : "string",
+          "description" : "Payment Account Reference"
+        },
+        "responder" : {
+          "type" : "string",
+          "description" : "Origin of the response",
+          "enum" : [ "BAMBORA", "PROCESSOR", "SCHEME", "ISSUER" ]
+        },
+        "responseCode" : {
+          "type" : "string",
+          "description" : "Textual response code, e.g. APPROVED, DENIED_NO_FUNDS or ERROR_ISSUER_INOPERATIVE"
+        },
+        "responseCode1987" : {
+          "type" : "string",
+          "description" : "Response code according to ISO 8583:1987"
+        },
+        "responseCode2003" : {
+          "type" : "integer",
+          "format" : "int32",
+          "description" : "Numeric response code according to ISO 8583:2003"
+        },
+        "responseCodeCategory" : {
+          "type" : "string",
+          "description" : "Category of response code. PARTIALLY_APPROVED means that e.g. Address Verification System or similar check was not successful. If client does not wish to proceed with transaction, AUTH_REVERSAL must be sent.",
+          "enum" : [ "APPROVED", "PARTIALLY_APPROVED", "DECLINED" ]
+        },
+        "retrievalRefNumber" : {
+          "type" : "string",
+          "description" : "Retrieval reference number for transaction"
+        },
+        "terminalRespData" : {
+          "$ref" : "#/definitions/TerminalRespData"
+        },
+        "transactionId" : {
+          "type" : "string",
+          "description" : "transactionId echoed from request"
+        }
+      },
+      "title" : "AcqApiTxResponse",
+      "description" : "Card transaction response"
+    },
+    "AcqApiTxStatusResponse" : {
+      "type" : "object",
+      "required" : [ "status" ],
+      "properties" : {
+        "response" : {
+          "$ref" : "#/definitions/AcqApiTxResponse"
+        },
+        "status" : {
+          "type" : "string",
+          "enum" : [ "PENDING", "COMPLETED" ]
+        }
+      },
+      "title" : "AcqApiTxStatusResponse"
+    },
+    "AddressVerificationSystem" : {
+      "type" : "object",
+      "properties" : {
+        "cardholderAddress" : {
+          "type" : "string",
+          "description" : "Cardholder street address"
+        },
+        "cardholderPostalCode" : {
+          "type" : "string",
+          "description" : "Cardholder postal code, should be provided without spaces"
+        }
+      },
+      "title" : "AddressVerificationSystem",
+      "description" : "Address Verification System data"
+    },
+    "AirlineData" : {
+      "type" : "object",
+      "properties" : {
+        "departureDate" : {
+          "type" : "string",
+          "format" : "date",
+          "description" : "Departure date"
+        },
+        "legs" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/AirlineLeg"
+          }
+        },
+        "passengerName" : {
+          "type" : "string",
+          "description" : "Passenger name",
+          "pattern" : "[\\x20-\\x7F]{1,49}"
+        },
+        "ticketNumber" : {
+          "type" : "string",
+          "description" : "Ticket/document number, or PNR locator code.",
+          "pattern" : "[A-Za-z0-9]{5,15}"
+        },
+        "travelAgencyCode" : {
+          "type" : "string",
+          "description" : "Travel agency code",
+          "pattern" : "[\\x20-\\x7F]{1,8}"
+        },
+        "travelAgencyName" : {
+          "type" : "string",
+          "description" : "Travel agency name",
+          "pattern" : "[\\x20-\\x7F]{1,25}"
+        }
+      },
+      "title" : "AirlineData",
+      "description" : "Airline ticket purchase data"
+    },
+    "AirlineLeg" : {
+      "type" : "object",
+      "properties" : {
+        "carrierCode" : {
+          "type" : "string",
+          "description" : "Carrier code (e.g. AA, BA or AY)",
+          "pattern" : "[\\x20-\\x7F]{2}"
+        },
+        "destinationLocationCode" : {
+          "type" : "string",
+          "description" : "Destination airport/city IATA code (e.g. LHR, JFK or HEL)",
+          "pattern" : "[A-Z]{3}"
+        },
+        "fareBasisCode" : {
+          "type" : "string",
+          "description" : "Fare basis code AN(15). May also include optional ticket designator",
+          "pattern" : "[\\x20-\\x7F]{1,15}"
+        },
+        "flightNumber" : {
+          "type" : "string",
+          "description" : "Flight number excluding carrier code",
+          "pattern" : "[\\x20-\\x7F]{1,5}"
+        },
+        "originLocationCode" : {
+          "type" : "string",
+          "description" : "Origin airport/city IATA code (e.g. LHR, JFK or HEL)",
+          "pattern" : "[A-Z]{3}"
+        },
+        "serviceClass" : {
+          "type" : "string",
+          "description" : "Service class AN(2)",
+          "pattern" : "[\\x20-\\x7F]{1,2}"
+        },
+        "stopOverCode" : {
+          "type" : "string",
+          "description" : "Stop over code AN(1)",
+          "pattern" : "[\\x20-\\x7F]{1}"
+        }
+      },
+      "title" : "AirlineLeg",
+      "description" : "Flight included in the ticket"
+    },
+    "AmountData" : {
+      "type" : "object",
+      "properties" : {
+        "amount" : {
+          "type" : "number",
+          "description" : "Amount of transaction in decimal notation. E.g. 1.23. Either this or isoAmount must be present.",
+          "minimum" : 0.0,
+          "exclusiveMinimum" : false
+        },
+        "currency" : {
+          "type" : "string",
+          "description" : "Alpha-numeric ISO 4217 currency code for transaction, e.g. EUR",
+          "pattern" : "[A-Z]{3}"
+        },
+        "isoAmount" : {
+          "type" : "integer",
+          "format" : "int64",
+          "description" : "Amount of transaction formatted according to card scheme specifications. E.g. 100 for 1.00 EUR. Either this or amount must be present.",
+          "minimum" : 0.0,
+          "maximum" : 999999999999,
+          "exclusiveMinimum" : false,
+          "exclusiveMaximum" : false
+        }
+      },
+      "title" : "AmountData",
+      "description" : "Amount for the operation. Mandatory for AUTH, PREAUTH, INCREMENTAL_AUTH, AUTH_REVERSAL_PARTIAL, ADJUSTMENT.  Conditional for CAPTURE and CAPTURE_REFUND if amount differs from original operation."
+    },
+    "ClearingRespData" : {
+      "type" : "object",
+      "properties" : {
+        "addressVerificationSystemResult" : {
+          "type" : "string",
+          "description" : "Card scheme address verification system result"
+        },
+        "authorizationCharacteristicsIndicator" : {
+          "type" : "string",
+          "description" : "Authorization characteristics indicator"
+        },
+        "cardLevelProductId" : {
+          "type" : "string",
+          "description" : "Card level product ID"
+        },
+        "cvvResultCode" : {
+          "type" : "string",
+          "description" : "Card scheme CVV result code"
+        },
+        "dateSettlement" : {
+          "type" : "string",
+          "example" : "--03-20",
+          "description" : "Card scheme month and day of settlement"
+        },
+        "dciPointOfServiceData" : {
+          "type" : "string",
+          "description" : "DinersClub / Discover point of service data"
+        },
+        "electronicCommerceIndicator" : {
+          "type" : "string",
+          "description" : "Electronic commerce indicator"
+        },
+        "lifeCycleIndicator" : {
+          "type" : "string",
+          "description" : "Life cycle indicator"
+        },
+        "merchantCategoryCode" : {
+          "type" : "integer",
+          "format" : "int32",
+          "description" : "Merchant category code used in authorization"
+        },
+        "merchantName" : {
+          "type" : "string",
+          "description" : "Merchant name used in authorization"
+        },
+        "rawActionCode1993" : {
+          "type" : "integer",
+          "format" : "int32",
+          "description" : "ISO 8583:1993 action code for selected schemes"
+        },
+        "terminalTypeIndicator" : {
+          "type" : "string",
+          "description" : "Terminal type indicator"
+        },
+        "transactionId" : {
+          "type" : "string",
+          "description" : "Card scheme transaction ID"
+        },
+        "validationCode" : {
+          "type" : "string",
+          "description" : "Validation code"
+        }
+      },
+      "title" : "ClearingRespData",
+      "description" : "Additional response data for transaction clearing, used only per agreement"
+    },
+    "ClientSideEncCardData" : {
+      "type" : "object",
+      "properties" : {
+        "encryptedCardData" : {
+          "type" : "string",
+          "format" : "byte",
+          "description" : "PlainCardData JSON object encrypted using the session key. Encryption uses AES in CBC mode and PKCS#5/PKCS#7 padding with zero initialisation vector.",
+          "minLength" : 1,
+          "maxLength" : 2147483647
+        },
+        "fingerprint" : {
+          "type" : "string",
+          "description" : "Fingerprint of certificate used for encrypting session key",
+          "minLength" : 1,
+          "maxLength" : 2147483647
+        },
+        "sessionKey" : {
+          "type" : "string",
+          "format" : "byte",
+          "description" : "AES-256 session key encrypted with RSA public key using PKCS#1 padding",
+          "minLength" : 1,
+          "maxLength" : 2147483647
+        }
+      },
+      "title" : "ClientSideEncCardData",
+      "description" : "Client side encrypted card data"
+    },
+    "DccData" : {
+      "type" : "object",
+      "properties" : {
+        "amount" : {
+          "type" : "number",
+          "description" : "DCC amount of transaction in decimal notation. E.g. 1.23. Either this or isoAmount must be present.",
+          "minimum" : 0.0,
+          "exclusiveMinimum" : false
+        },
+        "conversionRate" : {
+          "type" : "number",
+          "description" : "Currency conversion rate in decimal notation. Either this or isoConversionRate must be present",
+          "minimum" : 0.0,
+          "exclusiveMinimum" : false
+        },
+        "conversionRateDate" : {
+          "type" : "string",
+          "format" : "date",
+          "description" : "Date of currency conversion"
+        },
+        "conversionRateSrc" : {
+          "type" : "string",
+          "description" : "Name of conversion rate source for cardholder receipt"
+        },
+        "conversionRateText" : {
+          "type" : "string",
+          "description" : "Textual currency conversion rate for cardholder receipt"
+        },
+        "conversionRateTimestamp" : {
+          "type" : "string",
+          "format" : "date-time",
+          "description" : "Timestamp of currency conversion"
+        },
+        "currency" : {
+          "type" : "string",
+          "description" : "Alpha-numeric ISO 4217 currency code for DCC, e.g. EUR",
+          "pattern" : "[A-Z]{3}"
+        },
+        "dccProvider" : {
+          "type" : "string",
+          "description" : "Name of DCC provider for cardholder receipt"
+        },
+        "dccTemplate" : {
+          "type" : "string",
+          "description" : "DCC template used in the conversion"
+        },
+        "isoAmount" : {
+          "type" : "integer",
+          "format" : "int64",
+          "description" : "DCC amount of transaction formatted according to card scheme specifications. E.g. 100 for 1.00 EUR. Either this or amount must be present.",
+          "minimum" : 0.0,
+          "maximum" : 999999999999,
+          "exclusiveMinimum" : false,
+          "exclusiveMaximum" : false
+        },
+        "isoConversionRate" : {
+          "type" : "integer",
+          "format" : "int32",
+          "description" : "Currency conversion rate formatted according to card scheme convention. Either this or conversionRate must be present",
+          "minimum" : 1.0,
+          "maximum" : 99999999,
+          "exclusiveMinimum" : false,
+          "exclusiveMaximum" : false
+        },
+        "markup" : {
+          "type" : "string",
+          "description" : "Added DCC markup for cardholder receipt",
+          "pattern" : "[0-9]{1,5}"
+        }
+      },
+      "title" : "DccData",
+      "description" : "Dynamic Currency Conversion (DCC) rate data from DCC lookup response. Mandatory for DCC transactions."
+    },
+    "EcomReqData" : {
+      "type" : "object",
+      "properties" : {
+        "addressVerificationSystem" : {
+          "$ref" : "#/definitions/AddressVerificationSystem"
+        },
+        "airline" : {
+          "$ref" : "#/definitions/AirlineData"
+        },
+        "allow3dsDowngrade" : {
+          "type" : "boolean",
+          "description" : "If true when card scheme downgrades 3D Secure transaction to non-3D Secure, transaction is not declined. Inspect cardholderVerificationMethod in response to see if downgrade has taken place."
+        },
+        "cardReadingMethod" : {
+          "type" : "string",
+          "description" : "Card reading method used in the transaction, defaults to ECOM",
+          "enum" : [ "ECOM", "MAIL", "TELEPHONE", "STAGED_DIGITAL_WALLET_PRE_FUNDING", "STAGED_DIGITAL_WALLET_DURING_PURCHASE", "STAGED_DIGITAL_WALLET_POST_FUNDING" ]
+        },
+        "cardholderVerificationMethod" : {
+          "type" : "string",
+          "description" : "Cardholder verification method used in the transaction",
+          "enum" : [ "NONE", "CVV2", "THREEDS_ATTEMPT", "THREEDS", "THREEDS_MERCHANT_RISK", "THREEDS_ISSUER_RISK", "THREEDS_DATA_ONLY" ]
+        },
+        "threeDSecure" : {
+          "$ref" : "#/definitions/ThreeDSecure"
+        }
+      },
+      "title" : "EcomReqData",
+      "description" : "Request data for eCommerce and MOTO transactions"
+    },
+    "EcomRespData" : {
+      "type" : "object",
+      "properties" : {
+        "avsResult" : {
+          "type" : "string",
+          "description" : "Result of Address Verification Result",
+          "enum" : [ "MATCH", "ADDRESS_MATCH_POSTAL_CODE_MISMATCH", "ADDRESS_MISMATCH_POSTAL_CODE_MATCH", "ADDRESS_MATCH_POSTAL_CODE_NOT_VERIFIED", "ADDRESS_NOT_VERIFIED_POSTAL_CODE_MATCH", "MISMATCH", "ERROR", "NOT_VERIFIED" ]
+        },
+        "cardholderVerificationMethod" : {
+          "type" : "string",
+          "description" : "Actual cardholder verification method, present if scheme downgraded 3D Secure to SSL ",
+          "enum" : [ "NONE", "CVV2", "THREEDS_ATTEMPT", "THREEDS", "THREEDS_MERCHANT_RISK", "THREEDS_ISSUER_RISK", "THREEDS_DATA_ONLY" ]
+        },
+        "cvvResult" : {
+          "type" : "string",
+          "description" : "CVV Result",
+          "enum" : [ "MATCH", "MISMATCH", "CARD_HAS_CVV", "NOT_VERIFIED" ]
+        }
+      },
+      "title" : "EcomRespData",
+      "description" : "eCommerce and MOTO response data. Present if relevant data is available."
+    },
+    "MerchantData" : {
+      "type" : "object",
+      "properties" : {
+        "address" : {
+          "type" : "string",
+          "description" : "Merchant street address, retrieved from merchant configuration if omitted. Mandatory for payment facilitator transactions."
+        },
+        "city" : {
+          "type" : "string",
+          "description" : "Merchant city, retrieved from merchant configuration if omitted. Mandatory for payment facilitator transactions."
+        },
+        "country" : {
+          "type" : "string",
+          "description" : "Merchant country, retrieved from merchant configuration if omitted",
+          "pattern" : "[A-Z]{3}"
+        },
+        "independentSalesOrgId" : {
+          "type" : "string",
+          "description" : "Independent sales organisation ID assigned by Bambora"
+        },
+        "merchantCategoryCode" : {
+          "type" : "integer",
+          "format" : "int32",
+          "description" : "Merchant category code (MCC), retrieved from merchant configuration if omitted",
+          "minimum" : 0.0,
+          "maximum" : 9999.0,
+          "exclusiveMinimum" : false,
+          "exclusiveMaximum" : false
+        },
+        "merchantId" : {
+          "type" : "string",
+          "description" : "Bambora merchant ID N(8)",
+          "pattern" : "[0-9]{8}"
+        },
+        "name" : {
+          "type" : "string",
+          "description" : "Merchant name, retrieved from merchant configuration if omitted. Mandatory for payment facilitator transactions in which case special format has to be applied."
+        },
+        "paymentFacilitatorId" : {
+          "type" : "string",
+          "description" : "Payment facilitator ID assigned by Bambora"
+        },
+        "postalCode" : {
+          "type" : "string",
+          "description" : "Merchant postal code, retrieved from merchant configuration if omitted. Mandatory for payment facilitator transactions."
+        },
+        "schemeMerchantId" : {
+          "type" : "string",
+          "description" : "ID for the merchant used by the scheme"
+        },
+        "state" : {
+          "type" : "string",
+          "description" : "Merchant state code, retrieved from merchant configuration if omitted. Can only be supplied if country is USA or CAN.",
+          "pattern" : "[A-Z]{2}"
+        },
+        "subMerchantId" : {
+          "type" : "string",
+          "description" : "ID of sub-merchant assigned by PF/ISO. Used only together with PF ID or ISO ID"
+        },
+        "terminalId" : {
+          "type" : "string",
+          "description" : "Terminal ID ANS(8). Optional for eCommerce and other card not present ",
+          "minLength" : 8,
+          "maxLength" : 8
+        }
+      },
+      "title" : "MerchantData",
+      "description" : "Merchant information"
+    },
+    "OnlinePinData" : {
+      "type" : "object",
+      "properties" : {
+        "format" : {
+          "type" : "integer",
+          "format" : "int32",
+          "description" : "ISO PIN block format"
+        },
+        "keySerialNumber" : {
+          "type" : "string",
+          "format" : "byte",
+          "description" : "Key Serial Number (KSN) if DUKPT encryption is used for the PIN block",
+          "minLength" : 10,
+          "maxLength" : 10
+        },
+        "pinBlock" : {
+          "type" : "string",
+          "format" : "byte",
+          "description" : "Encrypted on-line PIN block (8 b)",
+          "minLength" : 8,
+          "maxLength" : 8
+        },
+        "zkaKeyId" : {
+          "type" : "string",
+          "description" : "ZKA key id"
+        },
+        "zkaRandomValue" : {
+          "type" : "string",
+          "format" : "byte",
+          "description" : "ZKA PIN random value",
+          "minLength" : 16,
+          "maxLength" : 16
+        },
+        "zonePinKeyId" : {
+          "type" : "string",
+          "description" : "ID of the Zone PIN Key if ZPK encryption is used for the PIN block",
+          "pattern" : "[\\x20-\\x7F]{1,255}"
+        }
+      },
+      "title" : "OnlinePinData",
+      "description" : "On-line PIN information"
+    },
+    "PlainCardData" : {
+      "type" : "object",
+      "properties" : {
+        "cardNumber" : {
+          "type" : "string",
+          "description" : "Card number, can be omitted if track 2 is present",
+          "pattern" : "[0-9]{12,19}"
+        },
+        "cvv2" : {
+          "type" : "string",
+          "description" : "CVV2/CVC2/CVN2 code",
+          "pattern" : "[0-9]{3,4}"
+        },
+        "expiry" : {
+          "type" : "string",
+          "description" : "Card expiry in format yyMM, can be omitted if track 2 is present",
+          "pattern" : "[0-9]{2}(0[1-9]|1[0-2])"
+        },
+        "track2" : {
+          "type" : "string",
+          "description" : "Track 2 data or track 2 equivalent data"
+        }
+      },
+      "title" : "PlainCardData",
+      "description" : "Card data in plain text"
+    },
+    "RecipientData" : {
+      "type" : "object",
+      "properties" : {
+        "accountNumber" : {
+          "type" : "string",
+          "description" : "Recipient account number"
+        },
+        "dateOfBirth" : {
+          "type" : "string",
+          "format" : "date",
+          "description" : "Date of birth of recipient"
+        },
+        "familyName" : {
+          "type" : "string",
+          "description" : "Recipient family Name"
+        },
+        "pan" : {
+          "type" : "string",
+          "description" : "Recipient PAN"
+        },
+        "postalCode" : {
+          "type" : "string",
+          "description" : "Postal code of the primary recipient account"
+        },
+        "unformattedText" : {
+          "type" : "string",
+          "description" : "Unformatted text for comments"
+        }
+      },
+      "title" : "RecipientData",
+      "description" : "Recipient Data"
+    },
+    "ReversalReqData" : {
+      "type" : "object",
+      "properties" : {
+        "reason" : {
+          "type" : "string",
+          "description" : "Reason for reversal, defaults to CUSTOMER_CANCELLATION",
+          "enum" : [ "CUSTOMER_CANCELLATION", "SUSPECTED_MALFUNCTION", "INVALID_RESP", "TIMEOUT_WAITING_RESP", "SUSPECT_FRAUD" ]
+        }
+      },
+      "title" : "ReversalReqData",
+      "description" : "Reversal request data. If not provided for reversal, reversal reason defaults to CUSTOMER_CANCELLATION."
+    },
+    "SplitCapture" : {
+      "type" : "object",
+      "properties" : {
+        "sequenceCount" : {
+          "type" : "integer",
+          "format" : "int32",
+          "description" : "Total number of split captures. Mandatory for last split capture. When sequenceNumber = sequenceCount it is assumed to be the last split capture and no more split captures will be approved.",
+          "minimum" : 1.0,
+          "exclusiveMinimum" : false
+        },
+        "sequenceNumber" : {
+          "type" : "integer",
+          "format" : "int32",
+          "description" : "Number of split capture in sequence",
+          "minimum" : 1.0,
+          "exclusiveMinimum" : false
+        }
+      },
+      "title" : "SplitCapture",
+      "description" : "Split capture indexing"
+    },
+    "TerminalReqData" : {
+      "type" : "object",
+      "properties" : {
+        "cardReadingMethod" : {
+          "type" : "string",
+          "description" : "Card reading method used in the transaction",
+          "enum" : [ "CHIP", "EMV_CTLS", "MG_CTLS", "MG", "KEYD_IN", "EMV_FALLBACK_TO_MG" ]
+        },
+        "cardSequenceNumber" : {
+          "type" : "integer",
+          "format" : "int32",
+          "description" : "Card sequence number"
+        },
+        "cardholderVerificationMethod" : {
+          "type" : "string",
+          "description" : "Cardholder verification method used in the transaction",
+          "enum" : [ "NO_CVM", "OFFLINE_PIN", "ONLINE_PIN", "CD_CVM", "MANUAL_SIGNATURE" ]
+        },
+        "emvData" : {
+          "type" : "string",
+          "format" : "byte",
+          "description" : "BER TLV encoded EMV request data"
+        },
+        "isoCashbackAmount" : {
+          "type" : "integer",
+          "format" : "int64",
+          "description" : "Cashback amount, formatted according to card scheme specifications. Present only if cashback transaction",
+          "minimum" : 0.0,
+          "maximum" : 999999999999,
+          "exclusiveMinimum" : false,
+          "exclusiveMaximum" : false
+        },
+        "onlinePin" : {
+          "$ref" : "#/definitions/OnlinePinData"
+        },
+        "singleTapSupport" : {
+          "type" : "boolean",
+          "description" : "Terminal support for single tap"
+        },
+        "terminalProfile" : {
+          "type" : "string",
+          "description" : "Capability profile of the payment terminal",
+          "enum" : [ "CHIP_CTLS_MG_OFFLINE_PIN_PRINTER", "CHIP_CTLS_MG_OFFLINE_PIN", "CHIP_CTLS_MG_ONLINE_PIN_PRINTER", "CHIP_CTLS_MG_ONLINE_PIN", "CHIP_CTLS_ONLINE_PIN", "CHIP_CTLS_OFFLINE_PIN", "CTLS_ONLY_NO_CVM" ]
+        },
+        "terminalType" : {
+          "type" : "string",
+          "description" : "Terminal installation type",
+          "enum" : [ "ATTENDED_IN_PAYEE", "UNATTENDED_IN_PAYEE", "UNATTENDED_NON_PAYEE", "MPOS_ATTENDED_IN_PAYEE", "CARDHOLDER_MOBILE_PHONE" ]
+        }
+      },
+      "title" : "TerminalReqData",
+      "description" : "Payment terminal request data"
+    },
+    "TerminalRespData" : {
+      "type" : "object",
+      "properties" : {
+        "emvData" : {
+          "type" : "string",
+          "format" : "byte",
+          "description" : "BER TLV encoded EMV response data"
+        }
+      },
+      "title" : "TerminalRespData",
+      "description" : "Payment terminal response data"
+    },
+    "ThreeDSecure" : {
+      "type" : "object",
+      "properties" : {
+        "aav" : {
+          "type" : "string",
+          "description" : "MasterCard AAV in original base64 encoding"
+        },
+        "cavv" : {
+          "type" : "string",
+          "description" : "Visa or DinersClub CAVV in either hexadecimal or base64 encoding"
+        },
+        "directoryServerTransactionId" : {
+          "type" : "string",
+          "description" : "3D Secure 2.x directory server transaction ID"
+        },
+        "tavv" : {
+          "type" : "string",
+          "description" : "Visa TAVV or MasterCard DSRP cryptogram in either hexadecimal or base64 encoding"
+        },
+        "version" : {
+          "type" : "string",
+          "description" : "3D Secure version, defaults to V1",
+          "enum" : [ "V1", "V2" ]
+        },
+        "xid" : {
+          "type" : "string",
+          "description" : "Visa XID in either hexadecimal or base64 encoding"
+        }
+      },
+      "title" : "ThreeDSecure",
+      "description" : "3D Secure data. Please note that if AAV or CAVV or equivalent is missing, transaction should not be flagged as 3D Secure."
+    }
+  }
+}
